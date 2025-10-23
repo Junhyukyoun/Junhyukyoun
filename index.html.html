@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text kopieren – Arbeitslosigkeit</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #141a2f;
+      --text: #e9eefc;
+      --muted: #9fb0e0;
+      --accent: #4f7cff;
+      --accent-pressed: #3b5fd4;
+      --success: #19c37d;
+      --ring: rgba(79,124,255,0.45);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji;
+      background: radial-gradient(1200px 600px at 70% -10%, #1a2250 0, rgba(26,34,80,0) 60%), var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      padding: 16px clamp(16px, 4vw, 32px);
+      position: sticky; top: 0; backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(11,16,32,0.9), rgba(11,16,32,0.6) 55%, rgba(11,16,32,0));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      z-index: 20;
+    }
+    header h1 { margin: 0; font-weight: 700; font-size: clamp(18px, 2.4vw, 24px); letter-spacing: 0.2px; }
+    header p { margin: 4px 0 0; color: var(--muted); font-size: clamp(12px, 1.8vw, 14px); }
+
+    .container { max-width: 1000px; margin: 16px auto 120px; padding: 0 clamp(16px, 4vw, 32px); }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+      overflow: clip;
+    }
+    .card-header { padding: clamp(14px, 3.2vw, 20px); border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .card-title { margin: 0; font-size: clamp(16px, 2.2vw, 20px); }
+    .hint { color: var(--muted); font-size: clamp(11px, 1.6vw, 13px); }
+
+    .area-wrap { position: relative; }
+    textarea {
+      width: 100%; min-height: min(70vh, 900px); resize: vertical; border: 0; outline: none; padding: clamp(16px, 3.6vw, 24px);
+      background: transparent; color: var(--text); font-size: clamp(14px, 2.2vw, 16px); line-height: 1.6; caret-color: var(--accent);
+      scrollbar-color: var(--muted) transparent;
+    }
+    textarea::selection { background: rgba(79,124,255,0.35); }
+
+    .footer-space { height: 112px; }
+
+    .copybar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      padding: 16px clamp(16px, 4vw, 32px) 20px;
+      background: linear-gradient(180deg, rgba(11,16,32,0), rgba(11,16,32,0.85) 35%, rgba(11,16,32,0.95));
+      display: grid; place-items: center;
+    }
+    .copybtn {
+      -webkit-tap-highlight-color: transparent;
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      width: min(680px, 94vw);
+      padding: 18px 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(180deg, var(--accent), #3d6dff);
+      color: white; font-weight: 800; font-size: clamp(16px, 3.6vw, 20px); letter-spacing: 0.2px;
+      box-shadow: 0 12px 30px rgba(79,124,255,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .copybtn:active { transform: translateY(1px); box-shadow: 0 8px 22px rgba(79,124,255,0.38), inset 0 1px 0 rgba(255,255,255,0.2); background: linear-gradient(180deg, var(--accent-pressed), #355ddd); }
+    .copybtn[aria-busy="true"] { pointer-events: none; opacity: .8; }
+
+    .status { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; min-height: 18px; }
+    .status.ok { color: var(--success); font-weight: 700; }
+    .status.err { color: #ff6666; font-weight: 700; }
+
+    .pill { font-size: .85em; padding: 4px 8px; border-radius: 999px; background: rgba(79,124,255,0.15); color: var(--text); border: 1px solid rgba(79,124,255,0.35); }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .copybtn { animation: pop .35s ease both; }
+      @keyframes pop { from { transform: scale(.98); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Arbeitslosigkeit – Text zum Kopieren</h1>
+    <p>Tippe auf den großen Button unten, um den gesamten Text in die Zwischenablage zu kopieren. <span class="pill">Funktioniert auf Handy &amp; PC</span></p>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Dein Text</h2>
+        <span class="hint">Der Inhalt ist schreibgeschützt. Du kannst ihn aber kopieren oder markieren.</span>
+      </div>
+      <div class="area-wrap">
+        <textarea id="text" readonly spellcheck="false">
+1.
+Arbeitslose sind Menschen, die keine bezahlte Arbeit haben, um sich selbst oder ihre Familie Geld zu verdienen, ihr Leben zu sichern. Offiziell gilt jemand nur Arbeitslos, wenn jemand arbeiten kann und arbeiten will und bei der Arbeitsagentur angemeldet ist. Zum Beispiel jemand hat ihre Arbeit in einen Cafe verloren, weil das Geschäft schließen musste.
+Sie möchte gerne wieder arbeiten und bewirbt bei neuen Cafes, hat aber bisher noch keine Annahme bekommen. Solange sie keine neue Arbeit findet, ist sie arbeitslos.
+
+2. 
+Jakob
+ Jakob hat seine Ausbildung als Bürokaufmann beendet, aber seine Firma hat ihn nicht behalten. In ein paar Monaten fängt in ein anderen Untenehmen an. Bis dorthin ist er kurz ohne Arbeit, also friktionell arbeitslos, weil er sich nur in eine Übergangsphase befindet.
+Sabine
+ Sabine hat ihr Job bei der Bank verloren, da wegen einer Wirtschaftskrise weniger Kredite vergeben werden und die Bank sparen muss. Sie ist konjunkturel arbeitslos, weil ihre Arbeitslosigkeit durch die schlechte Wirtschaftslage kommt. Wenn die Wirtschaft wieder besser läuft, wird sie wahrscheinlich schnell wieder Arbeit finden.
+Juliane
+ Juliane arbeitet im Sommer auf eine Insel als Kellnerin, aber im Winter gibt es dort keine Touristen, also auch keine Jobs. Sie ist saisonal arbeitslos, weil sie nur zu einer bestimmten Jahreszeit Arbeit hat und muss im Winter eine Beschäftigung finden, nicht arbeitslos zu sein. 
+Anton 
+ Anton hat fuer eine Autofirma gearbeitet, die jetzt auf Elektroautos umstellt. Da er Motoren für Benzinautos gebaut hat, braucht die Firma ihn nicht mehr. Er ist strukturell arbeitslos, weil seine Qualifikationen nicht mehr gebraucht werden. Jetzt muss er sich überlegen, ob er mit fast 50 nochmal eine neue Ausbildung macht.
+
+3.
+Langzeitarbeitslose haben es oft sehr schwer, wieder eine Arbeit zu finden. Im Material 2 wird betont, dass sie mit mehreren Problemen leiden, die sich gegenseitig beeinflussen. Viele Arbeitgeber stellen lieber Menschen ein, die gerade schon irgendwo arbeiten. Auch wenn Langzeitarbeitslose die gleiche Ausbildung oder ähnliche Erfahrungen haben, bekommen sie seltener eine neue Stelle. Dadurch haben sie deutlich schlechtere Chancen, wieder in den Beruf zu haben.
+Dazu kommen gesundheitliche und psychische Probleme. Wer sich nutzlos oder ausgeschlossen fühlt, hat oft Stress, Schlafproblemen oder sogar körperliche Probleme. Langzeitarbeitslosigkeit beeinflusst sich also nicht nur auf Geld, sondern auch auf die Gesundheit.
+
+Ein weiteres großes Problem ist die Vorurteile in der Gesellschaft. Viele Menschen denken, dass Arbeitslose faul sind oder keine Lust auf Arbeit haben. Ungefaehr 90% Prozent der Befragten spüren solche negative Blicke, und viele werden dadurch persönlich verletzt. Dieses Verhalten kann sehr weh tun und das Selbstvertrauen stark senken.
+Trotzdem bemühen sich viele Arbeitslose weiter, eine neue Arbeit zu finden. Sie schreiben Bewerbungen, gehen zu Terminen und probieren verschiedene Wege, aber meistens abgelehnt. Viele verlieren mit der Zeit den Selbstvertrauen und denken, dass sie keine Chancen mehr bekommen. 
+
+4.
+Die Aussage „Arbeit bestimmt den Wert eines Menschen. Wer keine Arbeit hat, ist gesellschaftlich weniger wert“ bedeutet, dass viele Menschen glauben, man ist nur etwas wert, wenn man arbeitet. Das Thema ist wichtig, weil Arbeit heute eine große Rolle im Leben meisten Menschen spielt. Sie gibt uns Geld, Sicherheit und das Gefühl, wert zu sein.
+Früher hatte Arbeit eine andere Bedeutung. In der Antike galt sie als etwas für Sklaven und war nichts Wertvolles und diente nur zum Ueberleben. Es galt als Gegenteil von Freiheit. Im Mittelalter beginnen viele Menschen die Arbeit einen hohen Wert zu geben und galt als Pflicht, die Gott gewollt ist. Während der Reformation bekam Arbeit einen neuen Sinn: Wer fleißig arbeitete, zeigte damit seine Tugend. In der Industrialisierung wurde Arbeit dann selbstverstaendlich und notwendig, um Geld zu verdienen. Wer nicht arbeitet, galt als Faul und unmoralisch. Arbeit war gleichzeitig nötig zum Leben und etwas, das man machen musste. Heute ist Arbeit nicht nur wichtig für den Lebensunterhalt, sondern auch ein Teil der Identität. 
+In unserer Gesellschaft hat Arbeit einen hohen Wert. Menschen, die arbeiten, bekommen Anerkennung und gelten als nützlich. Es hat sich in der Gesellschaft ein Vorurteil gebildet, dass die Menschen etwas leisten muessen, und daher haben Personen mit ein Job hohes ansehen.  Wer keine Arbeit hat, wird dagegen oft weniger geschätzt. 
+Für Langzeitarbeitslose hat diese Sichtweise oft negative Folgen. Viele Menschen haben Vorurteile gegenüber Arbeitslosen und halten sie für faul oder unmotiviert. Dadurch fühlen sich Betroffene ausgeschlossen und bekommen weniger Chancen auf dem Arbeitsmarkt. Außerdem leiden viele unter psychischem Druck, haben weniger Selbstvertrauen und fühlen sich einsam. Sie geraten leicht in einen Kreislauf: Vorurteile führen zu weniger Chancen, das wiederum zu Entmutigung und noch längerer Arbeitslosigkeit. Selbst wenn sie sich bemühen, werden sie gesellschaftlich oft nicht ernst genommen.
+        </textarea>
+      </div>
+    </div>
+    <div class="footer-space" aria-hidden="true"></div>
+  </div>
+
+  <div class="copybar" role="region" aria-label="Kopierleiste">
+    <button id="copyBtn" class="copybtn" type="button" aria-label="Gesamten Text kopieren">
+      📋 Gesamten Text kopieren
+    </button>
+    <div id="status" class="status" aria-live="polite"></div>
+  </div>
+
+  <script>
+    (function(){
+      const btn = document.getElementById('copyBtn');
+      const ta  = document.getElementById('text');
+      const status = document.getElementById('status');
+
+      function setStatus(msg, ok){
+        status.textContent = msg || '';
+        status.className = 'status ' + (ok === true ? 'ok' : ok === false ? 'err' : '');
+      }
+
+      async function copyModern(text){
+        await navigator.clipboard.writeText(text);
+      }
+
+      function copyFallback(text){
+        try {
+          const el = document.createElement('textarea');
+          el.value = text;
+          el.setAttribute('readonly', '');
+          el.style.position = 'fixed';
+          el.style.top = '-9999px';
+          document.body.appendChild(el);
+          el.focus();
+          el.select();
+          // iOS selection helper
+          el.setSelectionRange(0, el.value.length);
+          const ok = document.execCommand('copy');
+          document.body.removeChild(el);
+          if(!ok) throw new Error('execCommand failed');
+        } catch (e) {
+          throw e;
+        }
+      }
+
+      async function handleCopy(){
+        const text = ta.value;
+        btn.setAttribute('aria-busy','true');
+        setStatus('Kopieren…');
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await copyModern(text);
+          } else {
+            copyFallback(text);
+          }
+          setStatus('Kopiert! Du kannst den Text jetzt überall einfügen.', true);
+          btn.textContent = '✅ Kopiert';
+          setTimeout(()=>{ btn.textContent = '📋 Gesamten Text kopieren'; setStatus(''); }, 2500);
+        } catch (err) {
+          console.error(err);
+          setStatus('Kopieren nicht möglich. Markiere den Text und kopiere manuell (Strg/Cmd + C).', false);
+        } finally {
+          btn.removeAttribute('aria-busy');
+        }
+      }
+
+      btn.addEventListener('click', handleCopy);
+
+      // Keyboard shortcut: Ctrl/Cmd + B to copy
+      window.addEventListener('keydown', (e)=>{
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')){
+          e.preventDefault();
+          handleCopy();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
